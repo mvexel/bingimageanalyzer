@@ -34,19 +34,27 @@
 	THE SOFTWARE.
 	*/
 
+// Your Tilecache base directory.
+// You will need to create two directories here: tiles and tiles_simple.
+// These directories need to be writable by the web server.
+$TC_BASE = '/home/mvexel/www/';
+
+// Optionally, define a path to a local PHP error log file here if for some reason you don't want to use PHP's main error log file. If empty, errors will be logged using the global PHP configuration.
+// You will need to create this file and make it writable for the web server. 
+$LOG_LOCAL = 'php_errors.log';
+
+// From here on, no need for user configuration
 $BING_ZOOM_LEVELS=20;
 $ZOOM_THRESHOLD=11;
 $CACHED=FALSE;
 
-$LIMA=TRUE;
 
 error_reporting(E_ALL ^ E_NOTICE);
-ini_set("error_log","php_errors.log");
+if(strlen($LOG_LOCAL)>0) ini_set("error_log","php_errors.log");
 
 $d = $_GET['debug'];
 $t = $_GET['t'];
 $force = strlen($_GET['force'])>0;
-//error_log('called with t='.$t);
 $cur_zoom=strlen($t);
 $nodepth = strlen($_GET['nodepth']) > 0;
 $s=rand(0,7);
@@ -54,9 +62,8 @@ $url_base='http://ecn.t'.$s.'.tiles.virtualearth.net/tiles/a';
 $url_end='.jpeg?g=587&n=z';
 $url=$url_base.$t.$url_end;
 
-$tc_base = $LIMA?'/home/mvexel/www/':'/home/mvexel/public_html/bing/';
 
-$tilecache_basedir = $nodepth&&$cur_zoom>$ZOOM_THRESHOLD?$tc_base.'tiles_simple':$tc_base.'tiles';
+$tilecache_basedir = $nodepth&&$cur_zoom>$ZOOM_THRESHOLD?$TC_BASE.'tiles_simple':$TC_BASE.'tiles';
 
 $tile_fn = preg_replace('/(\d)/','/\1',$t);
 $tile_dir = substr(($tilecache_basedir . $tile_fn),0,-2);

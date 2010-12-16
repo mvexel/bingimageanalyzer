@@ -49,3 +49,17 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+
+Installation
+===========================================================================
+1. Edit index.html. Change the values for bingCredentials and baseURL. If
+You don't have a Bing Maps API key, get one through 
+http://msdn.microsoft.com/en-us/library/ff428642.aspx
+2. Edit tile.php. Change thhe value for $TC_BASE to a web-accessible
+directory. Optionally, enable logging to a specific file by setting 
+$LOCAL_LOG 
+3. Create directories 'tiles' and 'tiles_simple' in the directory you 
+provided in $TC_BASE, and make them writable for the webserver.
+4. Go to [baseURL]/bingimageanalyzer - should work now!
+
+
