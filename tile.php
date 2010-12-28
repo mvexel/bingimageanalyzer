@@ -62,6 +62,12 @@ $url_base='http://ecn.t'.$s.'.tiles.virtualearth.net/tiles/a';
 $url_end='.jpeg?g=587&n=z';
 $url=$url_base.$t.$url_end;
 
+// VE CONSTANTS
+$EarthRadius = 6378137;
+$MinLatitude = -85.05112878;
+$MaxLatitude = 85.05112878;
+$MinLongitude = -180;
+$MaxLongitude = 180;
 
 $tilecache_basedir = $nodepth&&$cur_zoom>$ZOOM_THRESHOLD?$TC_BASE.'tiles_simple':$TC_BASE.'tiles';
 
@@ -198,48 +204,176 @@ function date_out($matches)
 	return $mths[$matches[1]-1] . "/" . $matches[3] . " - " . $mths[$matches[4]-1] . "/" . $matches[6];
 }
 
+function charAt($str,$pos) {
+	return (substr($str,$pos,1) !== false) ? substr($str,$pos,1) : -1;
+}	
+
+// VE tile calculation functions adapted from C# code at http://msdn.microsoft.com/en-us/library/bb259689.aspx
+function Clip($n, $minValue, $maxValue)
+{
+    return min(max($n, $minValue), $maxValue);
+}
+
+function MapSize($zoomLevel)
+{
+    return (int) 256 << $zoomLevel;
+}
+
+function GroundResolution($latitude, $zoomLevel)
+{
+	$MinLatitude = -85.05112878;
+	$MaxLatitude = 85.05112878;
+	$EarthRadius = 6378137;
+    $latitude = Clip($latitude, $MinLatitude, $MaxLatitude);
+    return cos($latitude * pi() / 180) * 2 * pi() * $EarthRadius / MapSize($zoomLevel);
+}
+
+function MapScale($latitude, $zoomLevel, $screenDpi)
+{
+	return GroundResolution($latitude, $zoomLevel) * $screenDpi / 0.0254;
+}
+
+function LatLongToPixelXY($latitude, $longitude, $zoomLevel)
+{
+	$EarthRadius = 6378137;
+	$MinLatitude = -85.05112878;
+	$MaxLatitude = 85.05112878;
+	$MinLongitude = -180;
+	$MaxLongitude = 180;
+	print("lat/lon:" . $latitude . "/" . $longitude);
+    $latitude = Clip($latitude, $MinLatitude, $MaxLatitude);
+    $longitude = Clip($longitude, $MinLongitude, $MaxLongitude);
+	print("lat/lon:" . $latitude . "/" . $longitude);
+    $x = ($longitude + 180) / 360; 
+    $sinLatitude = sin($latitude * pi() / 180);
+    $y = 0.5 - log((1 + $sinLatitude) / (1 - $sinLatitude)) / (4 * pi());
+
+    $mapSize = MapSize($zoomLevel);
+    print("mapsize:" . $mapSize);
+    $pixelX = Clip($x * $mapSize + 0.5, 0, $mapSize - 1);
+    $pixelY = Clip($y * $mapSize + 0.5, 0, $mapSize - 1);
+
+    return array('pixelX' => (int) $pixelX, 'pixelY' => (int) $pixelY);
+}
+        
+function PixelXYToLatLong($pixelX, $pixelY, $zoomLevel)
+{
+	$mapSize = MapSize($zoomLevel);
+	$x = (Clip($pixelX, 0, $mapSize - 1) / $mapSize) - 0.5;
+	$y = 0.5 - (Clip($pixelY, 0, $mapSize - 1) / $mapSize);
+
+	$latitude = 90 - 360 * atan(exp(-$y * 2 * pi())) / pi();
+	$longitude = 360 * $x;
+
+	return array('latitude' => $latitude, 'longitude' => $longitude);
+}
+        
+function PixelXYToTileXY($pixelX, $pixelY)
+{
+	$tileX = $pixelX / 256;
+	$tileY = $pixelY / 256;
+	return array('tileX' => (int) $tileX, 'tileY' => (int) $tileY);
+}
+
+function TileXYToPixelXY($tileX, $tileY)
+{
+	$pixelX = $tileX * 256;
+	$pixelY = $tileY * 256;
+	return array('pixelX' => $pixelX, 'pixelY' => $pixelY);
+}
+
+function TileXYToQuadKey($tileX, $tileY, $zoomLevel)
+{
+	$quadKey = "";
+	for ($i = $zoomLevel; $i > 0; $i--)
+	{
+		$digit = '0';
+		$mask = 1 << ($i - 1);
+		if (($tileX & $mask) != 0)
+		{
+			$digit++;
+		}
+		if (($tileY & $mask) != 0)
+		{
+			$digit++;
+			$digit++;
+		}
+		$quadKey .= $digit;
+	}
+	return $quadKey;
+}
+
+function QuadKeyToTileXY($quadKey)
+{
+	$tileX = $tileY = 0;
+	$zoomLevel = strlen(quadKey);
+	for ($i = $zoomLevel; $i > 0; $i--)
+	{
+		$mask = 1 << ($i - 1);
+		switch (substr($quadKey,$levelOfDetail - i,1))
+		{
+			case '0':
+				break;
+
+			case '1':
+				$tileX |= mask;
+				break;
+
+			case '2':
+				$tileY |= mask;
+				break;
+
+			case '3':
+				$tileX |= mask;
+				$tileY |= mask;
+				break;
+
+			default:
+				return false;
+		}
+	}
+	return array('tileX' => $tileX, 'tileY' => $tileY, 'zoomLevel' => $zoomLevel);
+}
+
 	// adapted from http://social.msdn.microsoft.com/Forums/en-US/vemapcontroldev/thread/49d2e73a-b826-493b-84fd-34b0cb4d4fc3/  
 function QuadKeyToLatLong($quadkey) 
+{ 
+	error_log('making latlon from ' . $quadkey);
+	$x=0; 
+	$y=0; 
+	$zoomlevel = strlen($quadkey); 
+
+	//convert quadkey to tile xy coords 
+	for ($i = 0; $i < $zoomlevel; $i++) 
 	{ 
-		error_log('making latlon from ' . $quadkey);
-		$x=0; 
-		$y=0; 
-		$zoomlevel = strlen($quadkey); 
- 
-		//convert quadkey to tile xy coords 
-		for ($i = 0; $i < $zoomlevel; $i++) 
+		$factor = pow(2,$zoomlevel-$i-1); 
+		switch (charAt($quadkey,$i)) 
 		{ 
-			$factor = pow(2,$zoomlevel-$i-1); 
-			switch (charAt($quadkey,$i)) 
-			{ 
-				case '0': 
-					break; 
-				case '1': 
-					$x += $factor; 
-					break; 
-				case '2': 
-					$y += $factor; 
-					break; 
-				case '3': 
-					$x += $factor; 
-					$y += $factor; 
-					break; 
-			} 
+			case '0': 
+				break; 
+			case '1': 
+				$x += $factor; 
+				break; 
+			case '2': 
+				$y += $factor; 
+				break; 
+			case '3': 
+				$x += $factor; 
+				$y += $factor; 
+				break; 
 		} 
+	} 
+
+	//convert tileXY into pixel coordinates for top left corners 
+	$pixelX = $x*256; 
+	$pixelY = $y*256; 
  
-		//convert tileXY into pixel coordinates for top left corners 
-		$pixelX = $x*256; 
-		$pixelY = $y*256; 
-     
-		//convert to latitude and longitude coordinates 
-		error_log("zoomlevel/pixelX/pixelY/pi:" . $zoomlevel . "/" . $pixelX . "/" . $pixelY . "/" . pi());
-		$longitude = $pixelX*360/(256*pow(2,$zoomlevel)) - 180;
-		$latitude = asin((exp((0.5 - $pixelY / 256 / pow(2,$zoomlevel)) * 4 * pi()) - 1) / (exp((0.5 - $pixelY / 256 / pow(2,$zoomlevel)) * 4 * pi()) + 1)) * 180 / pi();
-		error_log("lat/lon: ".$latitude . "/" . $longitude);
-		return array('lat' => $latitude, 'lon' => $longitude); 
-	}
+	//convert to latitude and longitude coordinates 
+	error_log("zoomlevel/pixelX/pixelY/pi:" . $zoomlevel . "/" . $pixelX . "/" . $pixelY . "/" . pi());
+	$longitude = $pixelX*360/(256*pow(2,$zoomlevel)) - 180;
+	$latitude = asin((exp((0.5 - $pixelY / 256 / pow(2,$zoomlevel)) * 4 * pi()) - 1) / (exp((0.5 - $pixelY / 256 / pow(2,$zoomlevel)) * 4 * pi()) + 1)) * 180 / pi();
+	error_log("lat/lon: ".$latitude . "/" . $longitude);
+	return array('lat' => $latitude, 'lon' => $longitude); 
+}
 	
-	function charAt($str,$pos) {
-		return (substr($str,$pos,1) !== false) ? substr($str,$pos,1) : -1;
-	}	
 ?>
