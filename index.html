@@ -1,17 +1,20 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
-   <head>
-      <title>Bing Aerial Imagery Analyzer for OpenStreetMap</title>
-      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-
-      <script type="text/javascript" src="http://ecn.dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=7.0"></script>
-
-      <script type="text/javascript">
-	  var map;
-	  var lima=true;
-	  // http://stackoverflow.com/questions/901115/get-querystring-values-with-jquery
-	  function getParameterByName( name ) 
-	  {
+<head>
+	<title>Bing Aerial Imagery Analyzer for OpenStreetMap</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<script type="text/javascript" src="http://ecn.dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=7.0"></script> 
+	<script type="text/javascript">
+	// This is the URL at which the application (and tile.php) is accessible through the internet. 
+	var baseURL = 'http://lima.schaaltreinen.nl/mvexel/';
+	// This is your Bing Maps key. Get your own: http://msdn.microsoft.com/en-us/library/ff428642.aspx
+	var bingCredentials = "AncYMYJDvHMmYPXT7mJcpCeYxGEVcJFj_StK8PO3ih8WgjvfHzuvnyjc_iRFXqN2";
+	// No need to change anything beyond here
+	// ==============================================================
+	var map;
+	// http://stackoverflow.com/questions/901115/get-querystring-values-with-jquery
+	function getParameterByName( name ) 
+	{
 		name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
 		var regexS = "[\\?&]"+name+"=([^&#]*)";
 		var regex = new RegExp( regexS );
@@ -19,10 +22,10 @@
 		if( results == null )
 			return "";
 		else
-		return decodeURIComponent(results[1].replace(/\+/g, " "));
-	  }
-      function GetMap()
-      {   
+			return decodeURIComponent(results[1].replace(/\+/g, " "));
+	}
+    function GetMap()
+    {   
 		var lat=parseFloat(getParameterByName("lat"));
 		if(isNaN(lat)) lat=52.35;
 		var lon=parseFloat(getParameterByName("lon"));
@@ -31,18 +34,9 @@
 		if(isNaN(z)) z=parseInt(getParameterByName("zoom")); 
 		if(isNaN(z)) z=8;
 		var nodepth=getParameterByName("nodepth");
-		// FOR TEST ENVIRONMENT
-		if(lima) {
-			var baseURL = 'http://localhost/bingimageanalyzer/';
-			var tileSourceUri = baseURL + 'tile.php?t={quadkey}&nodepth=' + nodepth;
-		}
-		// FOR OSM DEV ENVIRONMENT
-		else {
-			var baseURL = 'http://mvexel.dev.openstreetmap.org/bing/';
-			var tileSourceUri = baseURL + 'tile.php?t={quadkey}&nodepth=' + nodepth;
-		};
-		
-//		alert(tileSourceUri);		
+		baseURL += '/bingimageanalyzer/';
+		var tileSourceUri = baseURL + 'tile.php?t={quadkey}&nodepth=' + nodepth;
+		//alert(tileSourceUri);
 		map = new Microsoft.Maps.Map(document.getElementById("mapDiv"), 
 			{
 //				FOR TEST ENVIRONMENT
@@ -57,7 +51,6 @@
 			}
 		);
         var tileSource = new Microsoft.Maps.TileSource({uriConstructor: tileSourceUri});
-//        var tileSource = new Microsoft.Maps.TileSource({uriConstructor: 'http://mvexel.dev.openstreetmap.org/bing/tile.php?t={quadkey}&nodepth='.nodepth});
     	var tilelayer= new Microsoft.Maps.TileLayer({ mercator: tileSource, opacity: 1 });
     	
 		map.entities.push(tilelayer);
@@ -78,68 +71,62 @@
 			permalinkspan.innerHTML='<a href="'+baseURL+'?lat='+c.latitude+'&lon='+c.longitude+'&zoom='+z+'">permalink</a>';
 			curzoomspan=document.getElementById('curzoom');
 			if(curzoomspan!=null) curzoomspan.innerHTML=map.getZoom();
-    	  });
-      }      
+    	});
+    }      
 	  
-	  	  function findName(credentials)
-		{
-			map.getCredentials(MakeGeocodeRequest);
-			document.getElementById('txtQuery').select();
-		}
+	function findName(credentials)
+	{
+		map.getCredentials(MakeGeocodeRequest);
+		document.getElementById('txtQuery').select();
+	}
 
-	  function MakeGeocodeRequest(credentials)
-         {
-            var geocodeRequest = "http://dev.virtualearth.net/REST/v1/Locations/" + document.getElementById('txtQuery').value + "?output=json&jsonp=GeocodeCallback&key=" + credentials;
-            CallRestService(geocodeRequest);
-         }
+	function MakeGeocodeRequest(credentials)
+    {
+        var geocodeRequest = "http://dev.virtualearth.net/REST/v1/Locations/" + document.getElementById('txtQuery').value + "?output=json&jsonp=GeocodeCallback&key=" + credentials;
+        CallRestService(geocodeRequest);
+    }
 
-		function CallRestService(request) 
-         {
-            var script = document.createElement("script");
-            script.setAttribute("type", "text/javascript");
-            script.setAttribute("src", request);
-            document.body.appendChild(script);
-         }
+	function CallRestService(request) 
+    {
+        var script = document.createElement("script");
+        script.setAttribute("type", "text/javascript");
+        script.setAttribute("src", request);
+        document.body.appendChild(script);
+    }
 		
-		function GeocodeCallback(result) 
+	function GeocodeCallback(result) 
+    {
+		foundName=result.resourceSets[0].resources[0].name;
+		var ppo={text:foundName,textOffset:new Microsoft.Maps.Point(0,20)};
+        if (result && result.resourceSets && result.resourceSets.length > 0 && result.resourceSets[0].resources && result.resourceSets[0].resources.length > 0) 
         {
-//            alert("Found location: " + result.resourceSets[0].resources[0].name);
-			foundName=result.resourceSets[0].resources[0].name;
-			var ppo={text:foundName,textOffset:new Microsoft.Maps.Point(0,20)};
-            if (result &&
-                   result.resourceSets &&
-                   result.resourceSets.length > 0 &&
-                   result.resourceSets[0].resources &&
-                   result.resourceSets[0].resources.length > 0) 
-            {
-               // Set the map view using the returned bounding box
-               var bbox = result.resourceSets[0].resources[0].bbox;
-               var viewBoundaries = Microsoft.Maps.LocationRect.fromLocations(new Microsoft.Maps.Location(bbox[0], bbox[1]), new Microsoft.Maps.Location(bbox[2], bbox[3]));
-               map.setView({ bounds: viewBoundaries});
-
-               // Add a pushpin at the found location
-               var location = new Microsoft.Maps.Location(result.resourceSets[0].resources[0].point.coordinates[0], result.resourceSets[0].resources[0].point.coordinates[1]);
-               var pushpin = new Microsoft.Maps.Pushpin(location,ppo);
-				//map.entities.clear();
-               map.entities.push(pushpin);
-            }
-         }
-
-    </script>
-   </head>
-   <body onload="GetMap();">
-      <div id='mapDiv' style="position:absolute; width:100%; height:100%;top:0px;left:0px;"></div>       
-      <div id='edit' style="position:absolute;top:0px;right:0px;width:120px;height:16px;padding:2px;background-color:white;font:bold 12px arial;z-index:100;text-align:right">
-      edit in potlatch2</div>
-      <div id='rest' style="position:absolute;top:20px;right:0px;width:120px;height:115px;padding:2px;background-color:white;opacity:0.8;font:12px arial;z-index:100;text-align:right">
-      <a href="about.txt">about this</a><br /><a href='https://oegeo.wordpress.com/2010/12/03/bing-aerial-photos-for-openstreetmap-great-but-are-they-recent/'>blog post</a>
-      <br /><a href='http://wiki.openstreetmap.org/wiki/Talk:Bing#Age_of_images'>report an error</a>
-	  <br /><span id='permalink'>permalink</span>
-	  <br /><br /><input size=8 id="txtQuery" type="text" onClick=select() onkeydown="if (event.keyCode == 13) findName()" value="Portland"/>
-	  <a href="#" onClick=findName()>find</a>
-	  <br />current zoom: <span id=curzoom></span>
-	  </div>
-		<div style='font:10px helvetica, sans-serif;text-align:center;border:1px solid black;background-color:#fff;position:absolute;bottom:35px;right:10px;opacity:0.6;'>A<br /><img src="veryfurry4_60.png" height='33' width='60' alt=''><br />thing</div>
-	  
-   </body>
+            var bbox = result.resourceSets[0].resources[0].bbox;
+            var viewBoundaries = Microsoft.Maps.LocationRect.fromLocations(new Microsoft.Maps.Location(bbox[0], bbox[1]), new Microsoft.Maps.Location(bbox[2], bbox[3]));
+            map.setView({ bounds: viewBoundaries});
+        }
+    }
+	</script> 
+</head>
+<body onload="GetMap();">
+	<div id='mapDiv' style="position:absolute; width:100%; height:100%;top:0px;left:0px;">
+	</div>
+	<div id='edit' style="position:absolute;top:0px;right:0px;width:120px;height:16px;padding:2px;background-color:white;font:bold 12px arial;z-index:100;text-align:right">
+	edit in potlatch2
+	</div>
+	<div id='rest' style="position:absolute;top:20px;right:0px;width:120px;height:115px;padding:2px;background-color:white;opacity:0.8;font:12px arial;z-index:100;text-align:right">
+		<a href="about.txt">about this</a><br />
+		<a href='https://oegeo.wordpress.com/2010/12/03/bing-aerial-photos-for-openstreetmap-great-but-are-they-recent/'>blog post</a> <br />
+		<a href='http://wiki.openstreetmap.org/wiki/Talk:Bing#Age_of_images'>report an error</a> <br />
+		<span id='permalink'>permalink</span> <br />
+		<br />
+		<input size=8 id="txtQuery" type="text" onClick=select() onkeydown="if (event.keyCode == 13) findName()" value="Portland" />
+		<a href="#" onClick=findName()>find</a> <br />
+		current zoom: <span id=curzoom></span> 
+	</div>
+	<div style='font:10px helvetica, sans-serif;text-align:center;border:1px solid black;background-color:#fff;position:absolute;bottom:35px;right:10px;opacity:0.6;'>
+		A<br />
+		<img src="veryfurry4_60.png" height='33' width='60' alt=''><br />
+		thing
+	</div>
+</body>
 </html>
