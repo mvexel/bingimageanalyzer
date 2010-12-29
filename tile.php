@@ -37,8 +37,8 @@
 // Your Tilecache base directory.
 // You will need to create two directories here: tiles and tiles_simple.
 // These directories need to be writable by the web server.
-$TC_BASE = '/home/mvexel/www/';
-//$TC_BASE = 'd:\\ms4w\\apache\\htdocs\\';
+//$TC_BASE = '/home/mvexel/www/';
+$TC_BASE = 'd:\\ms4w\\apache\\htdocs\\';
 
 // Optionally, define a path to a local PHP error log file here if for some reason you don't want to use PHP's main error log file. If empty, errors will be logged using the global PHP configuration.
 // You will need to create this file and make it writable for the web server. 
@@ -77,7 +77,6 @@ $tilecache_basedir = $nodepth&&$cur_zoom>$ZOOM_THRESHOLD?$TC_BASE.'tiles_simple'
 $tile_fn = preg_replace('/(\d)/','/\1',$t);
 $tile_dir = substr(($tilecache_basedir . $tile_fn),0,-2);
 $tile_fn = $tilecache_basedir . $tile_fn . '.png';
-//error_log($tile_fn);
 
 //$latlon = QuadKeyToLatLong($t);
 
@@ -108,24 +107,22 @@ if($CACHED) {
 		$tt=$t;
 		if($cur_zoom > $ZOOM_THRESHOLD) {
 			for($i=0;$i<4;$i++) {
+				$max_zoom=$cur_zoom;
 				$ttt=$tt.$i;
-				//error_log("doing tile ".$ttt.":");
-				for($max_zoom=$cur_zoom;$max_zoom<$BING_ZOOM_LEVELS;$max_zoom++) {
-					$n=$max_zoom%2?0:3;
-					$ttt.=$n;$url=$url_base.$ttt.$url_end;
-					//error_log($ttt . "....");
-					curl_setopt($ch, CURLOPT_URL,            $url); 
-					curl_setopt($ch, CURLOPT_HEADER,         true); 
-					curl_setopt($ch, CURLOPT_NOBODY,         true); 
-					curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); 
-					curl_setopt($ch, CURLOPT_TIMEOUT,        15); 
-					$rr = curl_exec($ch);
-					if(preg_match("/X\-VE\-Tile\-Info\:\ no\-tile/m",$rr)) break;
+				if(check_tile_exists($ttt))
+				{	
+					$max_zoom++;
+					for($max_zoom=$cur_zoom;$max_zoom<=$BING_ZOOM_LEVELS;$max_zoom++) {
+						$n=$max_zoom%2?0:3;
+						$ttt.=$n;
+						if(!check_tile_exists($ttt)) 
+							break;
+					}
 				}
 				$zz[$i]=max(0,$max_zoom-$cur_zoom);
 			}
-		};
-	};
+		}
+	}
 	$headers = array();
 
 	$r = explode("\n", $r); 
@@ -144,11 +141,11 @@ if($CACHED) {
 		$w=256;$h=256;
 		$date=preg_replace_callback("/(\d+)\/(\d+)\/(\d+)\-(\d+)\/(\d+)\/(\d+)/i","date_out",trim($headers['X-VE-TILEMETA-CaptureDatesRange']));
 		$im = imagecreatetruecolor(256,256);
-		imagealphablending($im, false);
-		$transparent = imagecolorallocatealpha($im, 0, 0, 0, 127);
-		imagefill($im, 0, 0, $transparent);
-		imagesavealpha($im,true);
-		imagealphablending($im, true); 		
+//		imagealphablending($im, false);
+//		$transparent = imagecolorallocatealpha($im, 0, 0, 0, 127);
+//		imagefill($im, 0, 0, $transparent);
+//		imagesavealpha($im,true);
+//		imagealphablending($im, true); 		
 		$background_color = imagecolorallocate($im, 0, 0, 0);
 		$text_color = imagecolorallocate($im, $w-1, $h-1, 0);
 		$text_color_shadow = imagecolorallocate($im, 64,64,0);
@@ -160,11 +157,10 @@ if($CACHED) {
 			for($i=0;$i<$levels;$i++) {
 				array_push(
 				$grid_colors, 
-				imagecolorallocatealpha($im, 
+				imagecolorallocate($im, 
 				floor(256-(256/($levels-$i))), 
 				floor(256-(256/($i+1))),
-				0,
-				64)
+				0)
 				);
 			}
 			
@@ -197,6 +193,20 @@ if($CACHED) {
 imagepng($im);
 if(!$CACHED) imagepng($im,$tile_fn);
 imagedestroy($im);
+
+function check_tile_exists($quadkey) 
+{
+	global $url_base,$url_end;
+	$url=$url_base.$quadkey.$url_end;
+	$ch = curl_init(); 
+	curl_setopt($ch, CURLOPT_URL,            $url); 
+	curl_setopt($ch, CURLOPT_HEADER,         true); 
+	curl_setopt($ch, CURLOPT_NOBODY,         true); 
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); 
+	curl_setopt($ch, CURLOPT_TIMEOUT,        15); 
+	$rr = curl_exec($ch);
+	return preg_match("/X\-VE\-Tile\-Info\:\ no\-tile/m",$rr)>0?false:true; 
+}
 
 function date_out($matches)
 {
@@ -341,7 +351,6 @@ function QuadKeyToTileXY($quadKey)
 	// adapted from http://social.msdn.microsoft.com/Forums/en-US/vemapcontroldev/thread/49d2e73a-b826-493b-84fd-34b0cb4d4fc3/  
 function QuadKeyToLatLong($quadkey) 
 { 
-	error_log('making latlon from ' . $quadkey);
 	$x=0; 
 	$y=0; 
 	$zoomlevel = strlen($quadkey); 
@@ -372,10 +381,8 @@ function QuadKeyToLatLong($quadkey)
 	$pixelY = $y*256; 
  
 	//convert to latitude and longitude coordinates 
-	error_log("zoomlevel/pixelX/pixelY/pi:" . $zoomlevel . "/" . $pixelX . "/" . $pixelY . "/" . pi());
 	$longitude = $pixelX*360/(256*pow(2,$zoomlevel)) - 180;
 	$latitude = asin((exp((0.5 - $pixelY / 256 / pow(2,$zoomlevel)) * 4 * pi()) - 1) / (exp((0.5 - $pixelY / 256 / pow(2,$zoomlevel)) * 4 * pi()) + 1)) * 180 / pi();
-	error_log("lat/lon: ".$latitude . "/" . $longitude);
 	return array('lat' => $latitude, 'lon' => $longitude); 
 }
 
