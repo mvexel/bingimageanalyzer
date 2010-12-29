@@ -132,27 +132,42 @@
 	<style type="text/css">
 		#slider { margin: 5px 10px 5px 10px; }
 		#placeInput {width: 90%}
-		.sliderbox {margin-top:2px;padding:2px;border:1px solid #aaa}
+		#rest {
+			position:absolute;
+			top:0px;
+			right:0px;
+			width:130px;
+			padding:4px;
+			background-color:white;
+			opacity:0.8;
+			font:12px arial;
+			z-index:100;
+			text-align:right
+		}
+		#edit {
+			font:bold 12px arial;
+		}
+		.box {margin-top:2px;padding:2px;border:1px solid #aaa}
 	</style>
 </head>
 <body onload="GetMap();">
 	<div id='mapDiv' style="position:absolute; width:100%; height:100%;top:0px;left:0px;">
 	</div>
-	<div id='edit' style="position:absolute;top:0px;right:0px;width:120px;height:16px;padding:2px;background-color:white;font:bold 12px arial;z-index:100;text-align:right">
-	edit in potlatch2
-	</div>
-	<div id='rest' style="position:absolute;top:20px;right:0px;width:120px;height:160px;padding:2px;background-color:white;opacity:0.8;font:12px arial;z-index:100;text-align:right">
+	<div id='rest'>
 		<a href="about.txt">about this</a><br />
 		<a href='https://oegeo.wordpress.com/2010/12/03/bing-aerial-photos-for-openstreetmap-great-but-are-they-recent/'>blog post</a> <br />
 		<a href='http://wiki.openstreetmap.org/wiki/Talk:Bing#Age_of_images'>report an error</a> <br />
 		<span id='permalink'>permalink</span> <br />
 		current zoom: <span id=curzoom></span> 
-		<div class=sliderbox>
+		<div class=box>
 			<input id="placeInput" size=13 id="txtQuery" type="text" onClick=select() onkeydown="if (event.keyCode == 13) findName()" value="Portland" /><br />
 			<a href="#" onClick=findName()>find</a> 
 		</div>
-		<div class=sliderbox>
+		<div class=box>
 			<div id="slider"></div>analysis lyr opacity
+		</div>
+		<div id='edit' class='box'>
+			edit in potlatch2
 		</div>
 	</div>
 	<div style='font:10px helvetica, sans-serif;text-align:center;border:1px solid black;background-color:#fff;position:absolute;bottom:35px;right:10px;opacity:0.6;'>

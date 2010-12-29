@@ -5,7 +5,7 @@
 	A quick hack to overlay bing tiles with their capture date as provided in the HTTP metadata.
 
 	Sample request:
-	tiledate.php?t=12020033230
+	tile.php?t=12020033230
 	
 	Call in Bing Ajax SDK like this:
 		var tileSource = new Microsoft.Maps.TileSource({uriConstructor: 'http://server/tile.php?t={quadkey}'});
@@ -38,13 +38,14 @@
 // You will need to create two directories here: tiles and tiles_simple.
 // These directories need to be writable by the web server.
 $TC_BASE = '/home/mvexel/www/';
+//$TC_BASE = 'd:\\ms4w\\apache\\htdocs\\';
 
 // Optionally, define a path to a local PHP error log file here if for some reason you don't want to use PHP's main error log file. If empty, errors will be logged using the global PHP configuration.
 // You will need to create this file and make it writable for the web server. 
 $LOG_LOCAL = 'php_errors.log';
 
 // From here on, no need for user configuration
-$BING_ZOOM_LEVELS=20;
+$BING_ZOOM_LEVELS=22;
 $ZOOM_THRESHOLD=11;
 $CACHED=FALSE;
 
@@ -76,7 +77,7 @@ $tile_dir = substr(($tilecache_basedir . $tile_fn),0,-2);
 $tile_fn = $tilecache_basedir . $tile_fn . '.png';
 //error_log($tile_fn);
 
-$latlon = QuadKeyToLatLong($t);
+//$latlon = QuadKeyToLatLong($t);
 
 if(!file_exists($tile_fn)) {
 	if (!is_dir($tile_dir)) mkdir($tile_dir,0777,true);
