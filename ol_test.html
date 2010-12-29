@@ -1,0 +1,83 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>OpenLayers: Spherical Mercator</title>
+    <style type="text/css">
+        /* avoid pink tiles */
+        .olImageLoadError {
+            background-color: transparent !important;
+       }
+	   body {
+			margin:0px;
+	   }
+	   .smallmap {
+			position:absolute;
+			width:100%;
+			height:100%;
+		}
+    </style>
+
+    <script src='http://dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=6.1'></script>
+    <script src="http://openlayers.org/api/OpenLayers.js"></script>
+    <script type="text/javascript">
+
+        // make map available for easy debugging
+        var map;
+
+        // increase reload attempts 
+        OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;
+
+        function init(){
+            var options = {
+                projection: new OpenLayers.Projection("EPSG:900913"),
+                displayProjection: new OpenLayers.Projection("EPSG:4326"),
+                units: "m",
+                numZoomLevels: 18,
+                maxResolution: 156543.0339,
+                maxExtent: new OpenLayers.Bounds(-20037508, -20037508,
+                                                 20037508, 20037508.34)												 
+            };
+            map = new OpenLayers.Map('map', options);
+
+            // create Virtual Earth layers
+            var veroad = new OpenLayers.Layer.VirtualEarth(
+                "Virtual Earth Roads",
+                {'type': VEMapStyle.Road, 'sphericalMercator': true}
+            );
+            var veaer = new OpenLayers.Layer.VirtualEarth(
+                "Virtual Earth Aerial",
+                {'type': VEMapStyle.Aerial, 'sphericalMercator': true}
+            );
+            var vehyb = new OpenLayers.Layer.VirtualEarth(
+                "Virtual Earth Hybrid",
+                {'type': VEMapStyle.Hybrid, 'sphericalMercator': true}
+            );
+
+            // create OSM layer
+            var mapnik = new OpenLayers.Layer.OSM();
+            // create OAM layer
+            var binganalyze = new OpenLayers.Layer.XYZ(
+                "Bing Analyzer",
+                "http://localhost/bingimageanalyzer/tile.php/1.0.0/binganalyzer/${z}/${x}/${y}.png",
+                {
+                    sphericalMercator: true,
+					isBaseLayer: false
+                }
+            );
+
+
+            map.addLayers([veroad, veaer, vehyb, binganalyze, mapnik]);
+            map.addControl(new OpenLayers.Control.LayerSwitcher());
+            map.addControl(new OpenLayers.Control.Permalink());
+            map.addControl(new OpenLayers.Control.MousePosition());
+            if (!map.getCenter()) {map.zoomToMaxExtent()}
+        }
+
+    </script>
+  </head>
+  <body onload="init()">
+    <div id="map" class="smallmap"></div>
+  </body>
+</html>
+
+
+

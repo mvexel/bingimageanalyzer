@@ -53,8 +53,10 @@ $CACHED=FALSE;
 error_reporting(E_ALL ^ E_NOTICE);
 if(strlen($LOG_LOCAL)>0) ini_set("error_log","php_errors.log");
 
+// This checks for valid TMS type request URIs, like http://domain/1.0.0/basic/17/67321/43067.png 
+
+$t = parse_query();
 $d = $_GET['debug'];
-$t = $_GET['t'];
 $force = strlen($_GET['force'])>0;
 $cur_zoom=strlen($t);
 $nodepth = strlen($_GET['nodepth']) > 0;
@@ -185,7 +187,7 @@ if($CACHED) {
 		
 
 		imagestring($im, 2, 6, 6, $date, $text_color_shadow);
-		imagestring($im, 2, 6, 18, $latlon['lon'] . ',' . $latlon['lat'], $text_color_shadow);
+//		imagestring($im, 2, 6, 18, $latlon['lon'] . ',' . $latlon['lat'], $text_color_shadow);
 		imagestring($im, 2, 5, 5, $date, $text_color);
 		imageline($im, 0, 0, 0, $h-1, $text_color);
 		imageline($im, 0, 0, $w-1, 0, $text_color);
@@ -375,6 +377,33 @@ function QuadKeyToLatLong($quadkey)
 	$latitude = asin((exp((0.5 - $pixelY / 256 / pow(2,$zoomlevel)) * 4 * pi()) - 1) / (exp((0.5 - $pixelY / 256 / pow(2,$zoomlevel)) * 4 * pi()) + 1)) * 180 / pi();
 	error_log("lat/lon: ".$latitude . "/" . $longitude);
 	return array('lat' => $latitude, 'lon' => $longitude); 
+}
+
+function parse_query()
+{
+	$tms_identifier = 0;
+	$req_uri = $_SERVER["REQUEST_URI"];
+	$matches = preg_split("/\//",$_SERVER["REQUEST_URI"]);
+	for($i = 0; $i < count($matches);  $i++) {
+		if($matches[$i]=="1.0.0")
+			$tms_identifier = $i;
+	}
+	if($tms_identifier)
+	{
+		$tms_zoom = (int)$matches[$tms_identifier+2];
+		$tms_x=(int)$matches[$tms_identifier+3];
+		preg_match("/\d+/",$matches[$tms_identifier+4],$tms_y_matches);
+		$tms_y=(int)$tms_y_matches[0];
+		if($tms_zoom && $tms_x && $tms_y) {
+			$n = pow(2, $tms_zoom);
+			$lon_deg = $tms_x / $n * 360.0 - 180.0;
+			$lat_deg = rad2deg(atan(sinh(pi() * (1 - 2 * $tms_y / $n))));
+			$t = TileXYToQuadKey($tms_x,$tms_y,$tms_zoom+1);
+		}
+	}
+	if(!isset($t))
+		$t = $_GET['t'];
+	return $t;
 }
 	
 ?>

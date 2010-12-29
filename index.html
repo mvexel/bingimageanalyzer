@@ -8,7 +8,8 @@
 	<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>	<script type="text/javascript" src="http://ecn.dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=7.0"></script> 
 	<script type="text/javascript">
 	// This is the URL at which the application (and tile.php) is accessible through the internet. 
-	var baseURL = 'http://lima.schaaltreinen.nl/mvexel/';
+	//var baseURL = 'http://lima.schaaltreinen.nl/mvexel/';
+	var baseURL = 'http://localhost/';
 	// This is your Bing Maps key. Get your own: http://msdn.microsoft.com/en-us/library/ff428642.aspx
 	var bingCredentials = "AncYMYJDvHMmYPXT7mJcpCeYxGEVcJFj_StK8PO3ih8WgjvfHzuvnyjc_iRFXqN2";
 	// No need to change anything beyond here
@@ -79,12 +80,12 @@
 	function findName(credentials)
 	{
 		map.getCredentials(MakeGeocodeRequest);
-		document.getElementById('txtQuery').select();
+		document.getElementById('placeInput').select();
 	}
 
 	function MakeGeocodeRequest(credentials)
     {
-        var geocodeRequest = "http://dev.virtualearth.net/REST/v1/Locations/" + document.getElementById('txtQuery').value + "?output=json&jsonp=GeocodeCallback&key=" + credentials;
+        var geocodeRequest = "http://dev.virtualearth.net/REST/v1/Locations/" + document.getElementById('placeInput').value + "?output=json&jsonp=GeocodeCallback&key=" + credentials;
         CallRestService(geocodeRequest);
     }
 
@@ -160,7 +161,7 @@
 		<span id='permalink'>permalink</span> <br />
 		current zoom: <span id=curzoom></span> 
 		<div class=box>
-			<input id="placeInput" size=13 id="txtQuery" type="text" onClick=select() onkeydown="if (event.keyCode == 13) findName()" value="Portland" /><br />
+			<input id="placeInput" size=13 type="text" onClick=select() onkeydown="if (event.keyCode == 13) findName()" value="Portland" /><br />
 			<a href="#" onClick=findName()>find</a> 
 		</div>
 		<div class=box>
