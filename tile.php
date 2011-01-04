@@ -158,10 +158,11 @@ if($CACHED) {
 			for($i=0;$i<$levels;$i++) {
 				array_push(
 				$grid_colors, 
-				imagecolorallocate($im, 
-				floor(256-(256/($levels-$i))), 
-				floor(256-(256/($i+1))),
-				0)
+					imagecolorallocatealpha($im, 
+					floor(256-(256/($levels-$i))), 
+					floor(256-(256/($i+1))),
+					0,
+					63)
 				);
 			}
 			
