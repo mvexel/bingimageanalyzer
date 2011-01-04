@@ -30,6 +30,7 @@ history:
 0.81-20101215	-	added OpenLayers zoom query parameter compatibility and
 			nodepth parameter for old-style overlay (no zoom depth)
 0.83-20101228	-	added layer opacity
+0.84-20110103	-	added TMS-style request parsing to tile.php
 ===========================================================================
 Copyright (c) 2010 Very Furry / Martijn van Exel
 
