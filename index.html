@@ -20,6 +20,7 @@
 	// No need to change anything beyond here
 	// ==============================================================
 	var map;
+	var tilelayer;
 	// http://stackoverflow.com/questions/901115/get-querystring-values-with-jquery
 	function getParameterByName( name ) 
 	{
@@ -55,7 +56,7 @@
 			}
 		);
     	var tileSource = new Microsoft.Maps.TileSource({uriConstructor: tileSourceUri});
-    	var tilelayer= new Microsoft.Maps.TileLayer({ mercator: tileSource, opacity: 1 });
+    	tilelayer= new Microsoft.Maps.TileLayer({ mercator: tileSource, opacity: 1 });
     	
 		map.entities.push(tilelayer);
 		map.isRotationEnabled(false);
@@ -120,13 +121,8 @@
 			$( "#slider" ).slider( "option", "value", 1);
 			$("#slider").slider({
        			change: function(event, ui) {
-       				var nodepth=getParameterByName("nodepth");
-					var tileSourceUri = baseURL + 'tile.php?t={quadkey}&nodepth=' + nodepth;
-					var tileSource = new Microsoft.Maps.TileSource({uriConstructor: tileSourceUri});
-//       				alert(tileSourceUri);
-       				var tilelayer= new Microsoft.Maps.TileLayer({ mercator: tileSource, opacity: $( "#slider" ).slider( "option", "value" ) });
-       				map.entities.pop();
-					map.entities.push(tilelayer);
+					var newopacity = $( "#slider" ).slider( "option", "value" );
+					tilelayer.setOptions({ opacity: newopacity });
 				}
 		    });
   		});
