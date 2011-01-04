@@ -34,7 +34,9 @@
                 numZoomLevels: 18,
                 maxResolution: 156543.0339,
                 maxExtent: new OpenLayers.Bounds(-20037508, -20037508,
-                                                 20037508, 20037508.34)												 
+                                                 20037508, 20037508.34),
+				center: new OpenLayers.LonLat(4.90,52.35),
+				zoom: 9
             };
             map = new OpenLayers.Map('map', options);
 
@@ -57,7 +59,7 @@
             // create OAM layer
             var binganalyze = new OpenLayers.Layer.XYZ(
                 "Bing Analyzer",
-                "http://localhost/bingimageanalyzer/tile.php/1.0.0/binganalyzer/${z}/${x}/${y}.png",
+                "http://lima.schaaltreinen.nl/mvexel/bingimageanalyzer/tile.php/1.0.0/binganalyzer/${z}/${x}/${y}.png",
                 {
                     sphericalMercator: true,
 					isBaseLayer: false
