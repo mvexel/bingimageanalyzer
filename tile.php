@@ -141,11 +141,11 @@ if($CACHED) {
 		$w=256;$h=256;
 		$date=preg_replace_callback("/(\d+)\/(\d+)\/(\d+)\-(\d+)\/(\d+)\/(\d+)/i","date_out",trim($headers['X-VE-TILEMETA-CaptureDatesRange']));
 		$im = imagecreatetruecolor(256,256);
-//		imagealphablending($im, false);
-//		$transparent = imagecolorallocatealpha($im, 0, 0, 0, 127);
-//		imagefill($im, 0, 0, $transparent);
-//		imagesavealpha($im,true);
-//		imagealphablending($im, true); 		
+		imagealphablending($im, false);
+		$transparent = imagecolorallocatealpha($im, 0, 0, 0, 127);
+		imagefill($im, 0, 0, $transparent);
+		imagesavealpha($im,true);
+		imagealphablending($im, true); 		
 		$background_color = imagecolorallocate($im, 0, 0, 0);
 		$text_color = imagecolorallocate($im, $w-1, $h-1, 0);
 		$text_color_shadow = imagecolorallocate($im, 64,64,0);
