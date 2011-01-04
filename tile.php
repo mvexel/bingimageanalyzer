@@ -37,8 +37,8 @@
 // Your Tilecache base directory.
 // You will need to create two directories here: tiles and tiles_simple.
 // These directories need to be writable by the web server.
-$TC_BASE = '/home/mvexel/www/';
-//$TC_BASE = '/home/mvexel/public_html/';
+//$TC_BASE = '/home/mvexel/www/';
+$TC_BASE = '/home/mvexel/public_html/';
 //$TC_BASE = 'd:\\ms4w\\apache\\htdocs\\';
 
 // Optionally, define a path to a local PHP error log file here if for some reason you don't want to use PHP's main error log file. If empty, errors will be logged using the global PHP configuration.
