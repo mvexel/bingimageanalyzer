@@ -37,8 +37,8 @@
 // Your Tilecache base directory.
 // You will need to create two directories here: tiles and tiles_simple.
 // These directories need to be writable by the web server.
-//$TC_BASE = '/home/mvexel/www/';
-$TC_BASE = '/home/mvexel/public_html/';
+$TC_BASE = '/home/mvexel/www/';
+//$TC_BASE = '/home/mvexel/public_html/';
 //$TC_BASE = 'd:\\ms4w\\apache\\htdocs\\';
 
 // Optionally, define a path to a local PHP error log file here if for some reason you don't want to use PHP's main error log file. If empty, errors will be logged using the global PHP configuration.
@@ -49,7 +49,7 @@ $LOG_LOCAL = 'php_errors.log';
 $BING_ZOOM_LEVELS=22;
 $ZOOM_THRESHOLD=11;
 $CACHED=FALSE;
-
+$DEBUGGING=FALSE;
 
 error_reporting(E_ALL ^ E_NOTICE);
 if(strlen($LOG_LOCAL)>0) ini_set("error_log","php_errors.log");
@@ -57,14 +57,12 @@ if(strlen($LOG_LOCAL)>0) ini_set("error_log","php_errors.log");
 // This checks for valid TMS type request URIs, like http://domain/1.0.0/basic/17/67321/43067.png 
 
 $t = parse_query();
-$d = $_GET['debug'];
-$force = strlen($_GET['force'])>0;
-$cur_zoom=strlen($t);
-$nodepth = strlen($_GET['nodepth']) > 0;
 $s=rand(0,7);
 $url_base='http://ecn.t'.$s.'.tiles.virtualearth.net/tiles/a';
 $url_end='.jpeg?g=587&n=z';
-$url=$url_base.$t.$url_end;
+$force = strlen($_GET['force'])>0;
+$cur_zoom=strlen($t);
+$nodepth = strlen($_GET['nodepth']) > 0;
 
 // VE CONSTANTS
 $EarthRadius = 6378137;
@@ -72,6 +70,12 @@ $MinLatitude = -85.05112878;
 $MaxLatitude = 85.05112878;
 $MinLongitude = -180;
 $MaxLongitude = 180;
+
+if (isset($_GET['debug'])) 
+{
+	$DEBUGGING=true;
+	debug();
+}
 
 $tilecache_basedir = $nodepth&&$cur_zoom>$ZOOM_THRESHOLD?$TC_BASE.'tiles_simple':$TC_BASE.'tiles';
 
@@ -97,13 +101,7 @@ if($CACHED) {
 	imagesavealpha($im, true); 
 } else {
 	error_log("tile " . $t . " not CACHED, creating...");
-	$ch = curl_init(); 
-	curl_setopt($ch, CURLOPT_URL,            $url); 
-	curl_setopt($ch, CURLOPT_HEADER,         true); 
-	curl_setopt($ch, CURLOPT_NOBODY,         true); 
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); 
-	curl_setopt($ch, CURLOPT_TIMEOUT,        15); 
-	$r = curl_exec($ch); 
+	$r = get_tile_headers($t); 
 	if(!$nodepth) {
 		$tt=$t;
 		if($cur_zoom > $ZOOM_THRESHOLD) {
@@ -112,8 +110,7 @@ if($CACHED) {
 				$ttt=$tt.$i;
 				if(check_tile_exists($ttt))
 				{	
-					$max_zoom++;
-					for($max_zoom=$cur_zoom;$max_zoom<=$BING_ZOOM_LEVELS;$max_zoom++) {
+					for($max_zoom=$cur_zoom+1;$max_zoom<=$BING_ZOOM_LEVELS;$max_zoom++) {
 						$n=$max_zoom%2?0:3;
 						$ttt.=$n;
 						if(!check_tile_exists($ttt)) 
@@ -196,18 +193,25 @@ imagepng($im);
 if(!$CACHED) imagepng($im,$tile_fn);
 imagedestroy($im);
 
-function check_tile_exists($quadkey) 
+function get_tile_headers($quadkey)
 {
-	global $url_base,$url_end;
+	global $url_base,$url_end,$DEBUGGING;
 	$url=$url_base.$quadkey.$url_end;
+	if($DEBUGGING) print("\tchecking tile url: " . $url . "\n");
 	$ch = curl_init(); 
 	curl_setopt($ch, CURLOPT_URL,            $url); 
 	curl_setopt($ch, CURLOPT_HEADER,         true); 
 	curl_setopt($ch, CURLOPT_NOBODY,         true); 
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); 
 	curl_setopt($ch, CURLOPT_TIMEOUT,        15); 
-	$rr = curl_exec($ch);
-	return preg_match("/X\-VE\-Tile\-Info\:\ no\-tile/m",$rr)>0?false:true; 
+	$headers = curl_exec($ch);	
+	if($DEBUGGING) print("\theaders: " . $headers . "\n");
+	return $headers;
+}
+
+function check_tile_exists($quadkey) 
+{
+	return preg_match("/X\-VE\-Tile\-Info\:\ no\-tile/m",get_tile_headers($quadkey))>0?false:true; 
 }
 
 function date_out($matches)
@@ -414,5 +418,46 @@ function parse_query()
 		$t = $_GET['t'];
 	return $t;
 }
+
+function debug() 
+{
+	global $t,$cur_zoom,$BING_ZOOM_LEVELS,$ZOOM_THRESHOLD;
+	print('<html><head><title>debug tile ' . $t . '</title></head><body><pre>');
+	print('debugging tile ' . $t . "\n");	
+	print('headers: ' . get_tile_headers($t) . "\n");
+	print('current zoom: ' . $cur_zoom . "\n");
+
+	$tt=$t;
+	if($cur_zoom > $ZOOM_THRESHOLD) {
+		for($i=0;$i<4;$i++) {
+			$max_zoom=$cur_zoom;
+			$ttt=$tt.$i;
+			$exists = check_tile_exists($ttt);
+			print("quad " . $i . ($exists?" exists":" does not exist") . "\n");
+			if($exists)
+			{	
+//				$cur_zoom++;
+				for($max_zoom=$cur_zoom+1;$max_zoom<=$BING_ZOOM_LEVELS;$max_zoom++) {
+					$n=$max_zoom%2?0:3;
+					$ttt.=$n;
+					if(!check_tile_exists($ttt))
+					{
+						print("zoom " .$max_zoom." does not exist, breaking\n");
+						break;
+					} 
+					else
+					{
+						print("zoom " .$max_zoom." exists, checking next level\n");
+					}
+				}
+			}
+			$mz[$i]=$max_zoom;
+			$zz[$i]=max(0,$max_zoom-$cur_zoom);
+		}
+	}
+	print($mz[0] . " " . $mz[1] . "\n" . $mz[2] . " " . $mz[3]);
+	exit();
+}
+
 	
 ?>
